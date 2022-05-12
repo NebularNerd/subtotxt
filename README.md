@@ -23,7 +23,7 @@ Copies input to output without change, appends *-copy* to filename *e.g.: subtit
 Skips asking ```Output file already exists, delete and make a new one? [y/n]``` and simply deletes the existing output file to create a new one. Ideal for batch processing.
 - *--help* or *-h*   
 Shows above information.
-## Required External Modules  
+## Required External Modules:  
 - [Send2Trash](https://pypi.org/project/Send2Trash/) Python module to safely delete the old output file on both Win and \*nix based systems.
 - [cchardet](https://pypi.org/project/cchardet/) Python module to detect your subtitle file encoding.  
 If your system does not these installed, it will auto install them on first use.  
