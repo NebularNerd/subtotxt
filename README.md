@@ -125,9 +125,9 @@ Output file in original UTF-8-BOM / UTF-8-SIG encoding:
 瑪德琳！
 ```
 ## Future plans:
-- Possibly handle more formats (.ssa Sub Station Alpha would be the other major one I could think of), for now you can use something like [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit) to convert other exotic formats to .srt or .vtt. If you have a format you would like to convert to txt, contact me or raise an issue to see if I can add support.
+- Possibly handle more formats (.ssa Sub Station Alpha would be the other major one I could think of), for now you can use something like [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit) to convert most other formats to .srt or .vtt. If you have a format you would like to convert to txt, contact me or raise an issue to see if I can add support.
 - GUI option for simple drag and drop usage.
 - Figure out a checking method for misnumbered or duplicate numbered SRT line numbers.
 - Handle stripping out SRT formatting tags for bold, italic etc...
 ## License:
-Released as CC0, use it how you wish. If you do use it elsewhere, please be awesome and tag me as the original author 🙂.
+Released as CC0, use it how you wish. If you do use it elsewhere, please be awesome and tag me as the original author. 🙂
