@@ -74,8 +74,8 @@ now you have some time to look at
 questions one to six
 ```  
   
-Examples with non latin characters:
-These are random examples take from an SRT website. cchardet calls them UTF-8-SIG, Notepad++ calls them UTF-8-BOM. 
+### Examples with non latin characters:
+These are random examples take from an SRT website. cchardet detects the encoding as UTF-8-SIG, Notepad++ detects as UTF-8-BOM, these are technically the same thing. 
   
 Arabic SRT in UTF-8-BOM / UTF-8-SIG encoding:
 ```  
