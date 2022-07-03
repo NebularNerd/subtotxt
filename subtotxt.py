@@ -1,5 +1,5 @@
 # SRT or WEBVTT to plain Text
-# Author: NebularNerd Version 1.0 (2022)
+# Author: NebularNerd Version 2.0 (July 2022)
 # https://github.com/NebularNerd/subtotxt
 # Import required packages
 import sys
@@ -10,11 +10,11 @@ import subprocess
 import re
 from pathlib import Path
 
-# Install send2trash and chardet if missing.
+# Install send2trash and charset_normalizer if missing.
 # See https://pypi.org/project/Send2Trash/
-# See https://pypi.org/project/cchardet/
+# See https://github.com/Ousret/charset_normalizer
 REQUIRED = {
-  'send2trash','cchardet'
+  'send2trash','charset-normalizer'
 }
 
 installed = {pkg.key for pkg in pkg_resources.working_set}
@@ -27,21 +27,7 @@ if missing:
     print('Done, thanks for waiting')
 
 from send2trash import send2trash
-import cchardet as chardet
-
-# Check file encoding
-def read_confidently(ifile):
-    filepath = Path(ifile)
-
-    # We must read as binary (bytes) because we don't yet know encoding
-    blob = filepath.read_bytes()
-
-    detection = chardet.detect(blob)
-    encoding = detection["encoding"]
-    confidence = detection["confidence"]
-    text = blob.decode(encoding)
-
-    return text, encoding, confidence
+from charset_normalizer import from_path
 
 # Clear screen win/*nix friendly
 def cls():
@@ -62,8 +48,16 @@ args = parser.parse_args()
 ifile = Path(args.file)
 ofile = ifile.with_suffix('.txt')
 cfile = ifile.with_stem(f"{ifile.stem}-copy")
-text, encoding, confidence = read_confidently(ifile)
-print('SUB to TXT 1.0\n')
+result = from_path(ifile).best() # charset_normalizer guess encoding
+encoding = result.encoding
+if result is not None and encoding == "utf_8" and result.bom:
+    encoding += "_sig" # adds sig for utf_8_sig/bom files
+if result is not None and encoding == "utf_16" and result.bom:
+        encoding += "_sig" # adds sig for utf_16_sig/bom files        
+confidence = 1.0 - result.chaos # gives probability of match being correct
+
+#Do stuff
+print('SUB to TXT 2.0\n')
 print('Input file  : \n',ifile)
 if args.copy:
     print('Output file : \n',cfile,'\n')
@@ -71,8 +65,8 @@ if args.copy:
 else:
     print('Output file : \n',ofile,'\n')
     deleteme = ofile
-print('Detected Character Encoding:',encoding)
-print('Confidence of encoding     : {:0.2f}%'.format(confidence*100))
+    print('Detected Character Encoding:',encoding)
+    print('Confidence of encoding     : {:0.2f}%'.format(confidence*100))
 if args.utf8:
     print('Output encoding forced to UTF-8')
     encset="utf8"
