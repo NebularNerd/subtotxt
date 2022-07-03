@@ -25,11 +25,13 @@ Skips asking ```Output file already exists, delete and make a new one? [y/n]``` 
 Shows above information.
 ## Required External Modules:  
 - [Send2Trash](https://pypi.org/project/Send2Trash/) Python module to safely delete the old output file on both Win and \*nix based systems.
-- [cchardet](https://pypi.org/project/cchardet/) Python module to detect your subtitle file encoding.  
+- ~~[cchardet](https://pypi.org/project/cchardet/) Python module to detect your subtitle file encoding~~ (Removed for v2.0 release due to issues with Python 3.10.x installs, still used in v1.0 and will work on Python 3.9.x installs).  
+- [charset_normalizer](https://github.com/Ousret/charset_normalizer) Python module to detect your subtitle file encoding (v2.0+ supports Python 3.9.x and 3.10.x).   
+
 If your system does not these installed, it will auto install them on first use.  
 ## Features:
 - Fast (aside from initial missing modules install on slow net connections)
-- Input files character encoding formats are autodetected (if supported by [cchardet](https://pypi.org/project/cchardet/))  
+- Input files character encoding formats are autodetected (if supported by [cchardet](https://pypi.org/project/cchardet/) [v1.0] or [charset_normalizer](https://github.com/Ousret/charset_normalizer) [v2.0+])  
 - Output files are wrote in the same encoding as the input or can be forced to UTF8
 - Should be cross platform friendly thanks to PathLib and Send2Trash
 - Handles UNC style ```\\myserver\myshare\mysub.srt``` paths thanks to PathLib
