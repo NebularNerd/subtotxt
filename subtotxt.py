@@ -1,5 +1,5 @@
 # SRT or WEBVTT to plain Text
-# Author: NebularNerd Version 2.0 (July 2022)
+# Author: NebularNerd Version 2.1 (July 2024)
 # https://github.com/NebularNerd/subtotxt
 # Import required packages
 import sys
