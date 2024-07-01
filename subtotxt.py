@@ -1,5 +1,5 @@
 # SRT or WEBVTT to plain Text
-# Author: NebularNerd Version 2.0 (July 2022)
+# Author: NebularNerd Version 2.1 (July 2024)
 # https://github.com/NebularNerd/subtotxt
 # Import required packages
 import sys
@@ -42,6 +42,7 @@ parser.add_argument("--pause", "-p", default=False, action="store_true", require
 parser.add_argument("--screen", "-s", default=False, action="store_true", required=False, help='Prints the conversion to the console as well as the file')
 parser.add_argument("--copy", "-c", default=False, action="store_true", required=False, help='Copies input to output without change, appends -copy to filename')
 parser.add_argument("--overwrite", "-o", default=False, action="store_true", required=False, help='Skips asking for permission to overwrite, will auto-delete old file and create a new one')
+parser.add_argument("--oneliners", "-1", default=False, action="store_true", required=False, help='Write all sentences in one line, even if the original divides it into many lines or subtitles.')
 args = parser.parse_args()
 
 # Setup file wrangling stuff and sanity checks
@@ -123,7 +124,14 @@ if srt == 1:
                 #Ignore SRT Subtitle # and Timecode lines
             elif not line.strip('\n') == '':
                 if args.screen: print(line, end='')
-                new.write(line)
+                if args.oneliners:
+                    line = line.strip()
+                    if line[-1] in [".", "?", "!", "…"]:
+                        new.write(line + '\n')
+                    else:
+                        new.write(line + ' ')
+                else:
+                    new.write(line)
 
 # WEBVTT format
 if webvtt == 1:
@@ -135,7 +143,14 @@ if webvtt == 1:
                 line = ''
             if not line.strip('\n') == '':
                 if args.screen: print(line, end='')
-                new.write(line)
+                if args.oneliners:
+                    line = line.strip()
+                    if line[-1] in [".", "?", "!", "…"]:
+                        new.write(line + '\n')
+                    else:
+                        new.write(line + ' ')
+                else:
+                    new.write(line)
 
 # Copy mode
 if args.copy:

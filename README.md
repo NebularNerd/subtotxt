@@ -21,6 +21,8 @@ Prints the output to the console while writing to the file, may help with debugg
 Copies input to output without change, appends *-copy* to filename *e.g.: subtitle-copy.srt*, handy to use with *--utf8* to quickly change encoding. Might be useful if your video player app cannot understand your original subtitle file encoding.
 - *--overwrite* or *-o*  
 Skips asking ```Output file already exists, delete and make a new one? [y/n]``` and simply deletes the existing output file to create a new one. Ideal for batch processing.
+- *--oneliners* or *-1*   
+Writes all sentences in one line, even if the original file divides some sentences into many lines or subtitles.
 - *--help* or *-h*   
 Shows above information.
 ## Required External Modules:  
@@ -125,6 +127,28 @@ Output file in original UTF-8-BOM / UTF-8-SIG encoding:
 （妳又想吃飯了？）
 （妳心情不好才會吃這麼多）
 瑪德琳！
+```
+## Oneliner flag example:
+With the oneliner flag on, the program checks if a line ends in one of those symbols: `. ? ! …`, then it writes a space and continues to write in the same line.
+Input:
+```  
+1
+00:02:07,240 --> 00:02:09,680
+Vine aquí a mediados
+del mes de julio
+
+2
+00:02:09,720 --> 00:02:11,600
+en busca de luz y de calma.
+
+3
+00:02:12,200 --> 00:02:14,880
+Fue estupendo.
+```
+Output:
+```
+    Vine aquí a mediados del mes de julio en busca de luz y de calma.
+    Fue estupendo.
 ```
 ## Future plans:
 - Possibly handle more formats (.ssa Sub Station Alpha would be the other major one I could think of), for now you can use something like [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit) to convert most other formats to .srt or .vtt. If you have a format you would like to convert to txt, contact me or raise an issue to see if I can add support.
