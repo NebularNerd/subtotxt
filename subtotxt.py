@@ -141,7 +141,8 @@ if webvtt == 1:
         for line in original:
             if "WEBVTT" in line or re.search("^Kind:.*$",line) or re.search("^Language:.*$",line) or re.search("(.*:.*:.*-->.*:.*:.*)",line):
                 line = ''
-            if not line.strip('\n') == '':
+            # skip empty lines
+            if not line.strip(' \n') == '':
                 if args.screen: print(line, end='')
                 if args.oneliners:
                     line = line.strip()
