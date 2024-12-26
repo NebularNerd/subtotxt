@@ -147,6 +147,8 @@ if webvtt == 1:
                 # skip duplicate lines
                 if prevline == line:
                     continue
+                # remove embedded tags from line
+                line = re.sub('<.*?>', '', line)
                 prevline = line
                 if args.screen: print(line, end='')
                 if args.oneliners:
