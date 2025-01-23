@@ -138,10 +138,18 @@ if webvtt == 1:
     with open(ifile, 'r', encoding=encoding) as original, open(ofile, 'w', encoding=encset) as new:
         subnum = 1
         subnumstr = str(subnum)
+        prevline = ''
         for line in original:
             if "WEBVTT" in line or re.search("^Kind:.*$",line) or re.search("^Language:.*$",line) or re.search("(.*:.*:.*-->.*:.*:.*)",line):
                 line = ''
-            if not line.strip('\n') == '':
+            # skip empty lines
+            if not line.strip(' \n') == '':
+                # skip duplicate lines
+                if prevline == line:
+                    continue
+                # remove embedded tags from line
+                line = re.sub('<.*?>', '', line)
+                prevline = line
                 if args.screen: print(line, end='')
                 if args.oneliners:
                     line = line.strip()
