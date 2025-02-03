@@ -1,7 +1,7 @@
 # cSpell:disable
 # SRT or WEBVTT to plain Text
 # Author: NebularNerd
-# Version: 2025-01-31
+# Version: 2025-02-03
 # https://github.com/NebularNerd/subtotxt
 import sys
 import os
@@ -9,6 +9,8 @@ import argparse
 import subprocess
 import re
 from pathlib import Path
+
+version = "2025-02-03"
 
 
 def missing_modules_installer(required_modules):
@@ -99,11 +101,16 @@ class subtitle:
                     return "vtt"
                 if line.strip("\n") == "1" and re.search("(.*:.*:.*-->.*:.*:.*)", next(ts)):
                     return "srt"
+                if any(s in line for s in ["!:", "Timer:", "Style:", "Comment:", "Dialogue:", "ScriptType:"]):
+                    return "ass"
 
     def junklist(self):
         # This list will grow
         # Escaping and r(raw) tag needed for special characters
-        return ["<.*?>", r"\{\\an8\}", r"^-\s", r"\[.*\]", r"\(.*\)", "^.*?:"]
+        j = ["<.*?>", r"\{.*?\}", r"\[.*\]", r"\(.*\)", r"^-\s"]
+        if args.nonames:
+            j.append("^.*?:")
+        return j
 
 
 def cls():  # Clear screen win/*nix friendly
@@ -125,11 +132,23 @@ def yn(yn):  # Simple Y/N selector, use yn(text_for_choice)
 def arguments():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Quickly convert SRT or WEBVTT subtitles into plain text file.",
+        description="Quickly convert SRT, SSA or WEBVTT subtitles into plain text file.",
         epilog="Visit https://github.com/NebularNerd/subtotxt for more information.",
     )
-    parser.add_argument(
-        "--file", "-f", type=str, required=True, help="Path to .srt or .vtt file, enclose in quotes if path has spaces"
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--file",
+        "-f",
+        type=str,
+        required=False,
+        help="Path to .srt/.vtt/.ass/.ssa file, enclose in quotes if path has spaces",
+    )
+    group.add_argument(
+        "--dir",
+        "-d",
+        type=str,
+        required=False,
+        help="Path to folder containing subtitle files, process all files in folder",
     )
     parser.add_argument(
         "--utf8",
@@ -178,6 +197,22 @@ def arguments():
         action="store_true",
         required=False,
         help="Write all sentences in one line, even if the original divides it into many lines or subtitles.",
+    )
+    parser.add_argument(
+        "--nonames",
+        "-nn",
+        default=False,
+        action="store_true",
+        required=False,
+        help="Removes character names if present (.ssa/.ass), attempts this for other formats.",
+    )
+    parser.add_argument(
+        "--nosort",
+        "-ns",
+        default=False,
+        action="store_true",
+        required=False,
+        help="For SubStation Alpha (.ssa/.ass), do not sort by timecode.",
     )
     return parser.parse_args()
 
@@ -241,6 +276,7 @@ def do_srt():
     # SubRip subtitle file .srt
     # https://en.wikipedia.org/wiki/SubRip
     # Format has a line number followed by a timecode on the next line, then text.
+    print("Processing file as SubRip subtitles [.srt]")
     with open(file.i, "r", encoding=enc.enc) as original:
         subnum = 1
         for line in original:  # Ignore SRT Subtitle # and Timecode lines
@@ -258,6 +294,7 @@ def do_vtt():
     # This format has a few differing 'standards', you have:
     # Metadata, notes, styles, timceodes with optional hours, and optional line numbers,
     # almost none of which are actually used it seems. But we need to handle them
+    print("Processing file as WebVTT (Web Video Text Tracks) [.vtt]")
     with open(file.i, "r", encoding=enc.enc) as original:
         subnum = 1
         head = 1  # Try and skip over everything until we reach the subtitles.
@@ -271,6 +308,44 @@ def do_vtt():
                 head = 0
             elif not line.strip("\n") == "" and head == 0:
                 process_line(line)
+    write_to_file()
+
+
+def do_ass():
+    # SubStation Alpha subtitle file .ssa/.ass
+    # https://wiki.multimedia.cx/index.php?title=SubStation_Alpha
+    # http://www.tcax.org/docs/ass-specs.htm Browser may complain as not https site.
+    # This format has different version, later ones include more metadata and sections,
+    # this should not be a big problem as teh text is always on a `Dialog:` line.
+    # Two keys issues are; lines may not be in timecode order,
+    # text may be for labelling things and not part of the script.
+    print("Processing file as SubStation Alpha subtitle [.ssa/.ass]")
+    with open(file.i, "r", encoding=enc.enc) as original:
+        # Try and get version
+        fv = ""
+        for line in original:
+            if "ScriptType:" in line:
+                fv = line.split(": ")[1].strip()
+        print(f"SSA Version: {fv}" if fv != "" else "No version found, assuming v1.0")
+        original.seek(0)
+        d = {}
+        for line in original:
+            # Example Dialog line v1.0:
+            # Dialogue: Marked=0,0:01:16.0,0:01:23.4,White Text,Usagi,0000,0000,0000,Pretty Soldier Sailor Moon
+            # Example Dialog line v3+:
+            # Dialogue: Marked=0,0:01:38.95,0:01:41.75,owari,Lupin,0000,0000,0000,,Yeah, love is wonderful.
+            if "Dialogue:" in line:
+                if fv == "":
+                    x = re.findall(r"Dialogue:.*?,(.*?\.\d*),.*?\.\d*,.*?,(.*?),.*?,.*?,.*?,(.*)", line)  # v1.0
+                else:
+                    x = re.findall(r"Dialogue:.*?,(.*?\.\d*),.*?\.\d*,(.*?),.*?,.*?,.*?,.*?,.*?,(.*)", line)  # v 3.0+
+                stc = x[0][0]  # Start timecode
+                nom = x[0][1]  # Character speaking
+                txt = x[0][2]  # Text
+                text = txt if (args.nonames or nom == "") else f"{nom}: {txt}"
+                d.update({stc: {"dialog": text}})
+        for t in [v["dialog"] for k, v in sorted(d.items())] if not args.nosort else [v["dialog"] for v in d.values()]:
+            process_line(t.replace(r"\n", " ").replace(r"\N", " "))  # Fixes odd newline in .ass
     write_to_file()
 
 
@@ -288,6 +363,8 @@ def do_work():
         do_srt()
     elif sub.format == "vtt":
         do_vtt()
+    elif sub.format == "ass":
+        do_ass()
     else:
         raise Exception("Unable to determine Subtitle format.")
 
@@ -296,16 +373,31 @@ if __name__ == "__main__":
     args = arguments()
     cls()
     try:
-        print(f"SUB to TXT v2025-01-31\n{'-' * 22}")
-        file = file_handler(Path(args.file))
-        enc = encoding(file.i)
-        if args.pause and not yn("Ready to start?"):
-            raise Exception("User exited at pause before start")
-        if args.copy:
-            copy()
-        else:
-            sub = subtitle()
-            do_work()
+        print(f"SUB to TXT v{version}\n{'-' * 22}")
+        if args.file or args.copy:
+            file = file_handler(Path(args.file))
+            enc = encoding(file.i)
+            if args.pause and not yn("Ready to start?"):
+                raise Exception("User exited at pause before start")
+            if args.copy:
+                copy()
+            else:
+                sub = subtitle()
+                do_work()
+        if args.dir:
+            files = list(filter(lambda p: p.suffix in {".srt", ".vtt", ".ssa", ".ass"}, Path(args.dir).glob("*")))
+            how_many = len(files)
+            c = 0
+            print(f"Multi file mode. Found {how_many} files.")
+            print("-" * 22)
+            for file in files:
+                file = file_handler(Path(file))
+                enc = encoding(file.i)
+                sub = subtitle()
+                do_work()
+                print("-" * 22)
+                c += 1
+            print(f"Processed {c}/{how_many} files.")
         print("\nFinished!\n")
     except Exception as error:
         print(f"Script execution stopped because:\n{error}")
