@@ -1,25 +1,25 @@
-# https://github.com/marketplace/actions/flake8-annotate-action
+# https://github.com/marketplace/actions/run-flake8-with-reviewdog
 
-name: Flake8 Lint
-"on": ["push"]
+name: flake8 Lint
+
+on: [push, pull_request]
 
 jobs:
-  flake8:
-    name: Flake8 tests
+  flake8-lint:
     runs-on: ubuntu-latest
+    name: Lint
     steps:
-      - uses: actions/checkout@master
-      - uses: gijswobben/flake8-action@main
+      - name: Check out source repository
+        uses: actions/checkout@v4
+      - name: Set up Python environment
+        uses: actions/setup-python@v5
         with:
-          strict: true
-          strict_for: "E501"
-          not_strict_for: "E502,E503"
-          message_title: "Flake8 error found"
-          flake8_config: |
-            [flake8]
-            exclude = examples/ tests/
-            max-line-length = 120
-            extend-ignore =
-                # See https://github.com/PyCQA/pycodestyle/issues/373
-                E203,
-          additional_packages: pep8-naming==0.13.2 flake8-annotations==2.9.1 darglint==1.8.1 flake8-bugbear==22.10.27
+          python-version: "3.11"
+      # Install specific flake8 version (this step is not required. Default is "latest").
+      - run: pip install flake8==6.0.0
+      # Install flake8 extensions (this step is not required. Default is "None").
+      - run: pip install flake8-docstrings flake8-simplify flake8-unused-arguments flake8-quotes
+      - name: flake8 Lint
+        uses: reviewdog/action-flake8@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
