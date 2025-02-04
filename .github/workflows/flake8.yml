@@ -1,0 +1,25 @@
+# https://github.com/marketplace/actions/flake8-annotate-action
+
+name: Flake8 Lint
+"on": ["push"]
+
+jobs:
+  flake8:
+    name: Flake8 tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: gijswobben/flake8-action@main
+        with:
+          strict: true
+          strict_for: "E501"
+          not_strict_for: "E502,E503"
+          message_title: "Flake8 error found"
+          flake8_config: |
+            [flake8]
+            exclude = examples/ tests/
+            max-line-length = 120
+            extend-ignore =
+                # See https://github.com/PyCQA/pycodestyle/issues/373
+                E203,
+          additional_packages: pep8-naming==0.13.2 flake8-annotations==2.9.1 darglint==1.8.1 flake8-bugbear==22.10.27
