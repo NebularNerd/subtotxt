@@ -8,9 +8,7 @@ import pytest
 
 
 class test_values:
-    """
-    Set file name and options to parse
-    """
+    """Set file name and options to parse."""
 
     def __init__(self):
         self.loca = Path(__file__).parent.absolute()  # Maps basedir to location of this file
@@ -26,9 +24,7 @@ use_this = test_values()
 
 
 def compare_files():
-    """
-    If both approved output and tested output match, all is good.
-    """
+    """If both approved output and tested output match, all is good."""
     a = CRC32_from_file(Path(f"{use_this.loca}/resources/outputs/SSA_Example_400plus.txt"))
     b = CRC32_from_file(Path(use_this.outf.name))
     if a != b:
@@ -38,9 +34,7 @@ def compare_files():
 
 
 def CRC32_from_file(filename):
-    """
-    Quick and easy CRC32 checker, nothing fancy.
-    """
+    """Quick and easy CRC32 checker, nothing fancy."""
     buf = open(filename, "rb").read()
     buf = binascii.crc32(buf) & 0xFFFFFFFF
     return "%08X" % buf
@@ -48,9 +42,7 @@ def CRC32_from_file(filename):
 
 @pytest.fixture
 def in_file():
-    """
-    Set variables to pass through to tester in main script
-    """
+    """Set variables to pass through to tester in main script."""
     return {
         "test_file": use_this.file,
         "test_force": use_this.utf8,
@@ -63,8 +55,8 @@ def in_file():
 
 def test_ass(in_file):
     """
-    Tests using default options
-    Temp file should match CRC32 of know good output
+    Tests using default options.
+    Temp file should match CRC32 of know good output.
     Not the most comprehensive test but it's a start.
     """
     results = check_it_works(in_file)
