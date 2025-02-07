@@ -1,3 +1,5 @@
+""" Test SubStation Alpha Subtitles. """
+
 # cSpell: disable
 # Test SubStation Alpha Subtitles 4.00+
 import tempfile
