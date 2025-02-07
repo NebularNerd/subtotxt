@@ -11,7 +11,18 @@ class test_values:
     """Set file name and options to parse."""
 
     def __init__(self):
-        self.loca = Path(__file__).parent.absolute()  # Maps basedir to location of this file
+        """
+        Variables have the following purposes.
+
+        loca: Maps basedir to location of this file.
+        file: Input file, we use a string as it will become a Path again later.
+        utf8: If True, Force UTF8 encoding for output.
+        name: If True, Strip names from lines, e.g.: `Blackadder: You're name is Bob?`.
+        sort: If True, Disables sorting .ass subs into timecode order.
+        onel: If True, Trys to join split sentences into one line.
+        outf: Temp output file to override normal output location.
+        """
+        self.loca = Path(__file__).parent.absolute()
         self.file = str(f"{self.loca}/resources/SSA_Example_400plus.ass")
         self.utf8 = False
         self.name = False
@@ -56,6 +67,7 @@ def in_file():
 def test_ass(in_file):
     """
     Tests using default options.
+
     Temp file should match CRC32 of know good output.
     Not the most comprehensive test but it's a start.
     """
