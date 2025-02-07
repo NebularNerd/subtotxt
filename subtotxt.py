@@ -10,6 +10,7 @@ import subprocess
 import re
 from pathlib import Path
 
+
 version = "2025-02-03"
 
 
@@ -64,53 +65,87 @@ while True:
 
 
 class file_handler:
-    def __init__(self, i):
+    def __init__(self):
+        self.i = None  # Input file
+        self.o = None  # Output file
+        self.c = None  # Copy file
+        self.overw = None  # Overwrite
+
+    def set_file(self, i):
+        i = Path(i)
         if i.is_file():
             self.i = i
             self.o = i.with_suffix(".txt")
             self.c = i.with_stem(f"{Path(i).stem}-copy")
             print(f"Input file: {i}")
         else:
-            raise Exception(f"File {i} not found.")
+            raise FileNotFoundError(f"File '{i}' not found.")
+
+    def set_over(self, x):
+        self.overw = x
 
 
 class encoding:
-    def __init__(self, i):
-        self.res = from_path(i).best()  # charset_normalizer guess encoding
+    def __init__(self):
+        self.res = None  # Check encoding
+        self.enc = None  # Detected encoding
+        self.out = None  # Output encoding
+
+    def check_encoding(self):
+        self.res = from_path(file.i).best()  # charset_normalizer guess encoding
         self.enc = self.res.encoding
-        self.out = "utf_8" if args.utf8 else self.enc
         if self.res is not None and self.enc == "utf_8" and self.res.bom:
             self.enc += "_sig"  # adds sig for utf_8_sig/bom files
         print(f"Detected Character Encoding: {self.enc}")
         print(f"Confidence of encoding: {int((1.0 - self.res.chaos) * 100)}%")
-        print("Output encoding forced to UTF-8" if args.utf8 else "Output will use input encoding")
+
+    def force_utf8(self, x):
+        print("Output encoding forced to UTF-8" if x else "Output will use input encoding")
+        self.out = "utf_8" if x else self.enc
 
 
 class subtitle:
     def __init__(self):
-        self.format = self.testsub()  # Which subtitle format
+        self.format = None  # Which subtitle format
         self.text = ""  # The output text
         self.text_finished = ""  # The output text after a final check
         self.prev = ""  # Previously read line, prevents duplicates
-        self.junk = self.junklist()
+        self.junk = None  # Junk remover list, set below
+        self.no_names = False  # If True removes names from subtitles
+        self.nosrt = False  # If True leaves subs in file order, not timecode order
+        self.scr = False  # If True outputs to screen as each line processed
+        self.oneline = False  # If True attempts to join longer lines
 
     def testsub(self):
         with open(file.i, "r", encoding=enc.enc) as ts:
             for line in ts:
                 if "WEBVTT" in line:
-                    return "vtt"
+                    self.format = "vtt"
                 if line.strip("\n") == "1" and re.search("(.*:.*:.*-->.*:.*:.*)", next(ts)):
-                    return "srt"
+                    self.format = "srt"
                 if any(s in line for s in ["!:", "Timer:", "Style:", "Comment:", "Dialogue:", "ScriptType:"]):
-                    return "ass"
+                    self.format = "ass"
 
     def junklist(self):
         # This list will grow
         # Escaping and r(raw) tag needed for special characters
         j = ["<.*?>", r"\{.*?\}", r"\[.*\]", r"\(.*\)", r"^-\s"]
-        if args.nonames:
+        if self.no_names:
             j.append("^.*?:")
         return j
+
+    def set_no_names(self, x):
+        self.no_names = x
+        self.junk = self.junklist()
+
+    def set_no_sort(self, x):
+        self.nosrt = x
+
+    def screen_output(self, x):
+        self.scr = x
+
+    def one_line(self, x):
+        self.oneline = x
 
 
 def cls():  # Clear screen win/*nix friendly
@@ -214,12 +249,20 @@ def arguments():
         required=False,
         help="For SubStation Alpha (.ssa/.ass), do not sort by timecode.",
     )
+    parser.add_argument(
+        "--debug",
+        "-db",
+        default=False,
+        action="store_true",
+        required=False,
+        help="Give Traceback output if the script fails",
+    )
     return parser.parse_args()
 
 
-def overwrite(f):
+def overwrite_old_file(f):
     if f.is_file():
-        if (not args.overwrite and yn("Output file already exists, delete and make a new one?")) or args.overwrite:
+        if (not file.overw and yn("Output file already exists, delete and make a new one?")) or file.overw:
             print("Overwriting old file")
             send2trash(f)
         else:
@@ -227,7 +270,7 @@ def overwrite(f):
 
 
 def copy():
-    overwrite(file.c)
+    overwrite_old_file(file.c)
     with open(file.i, "r", encoding=enc.enc) as original, open(file.c, "w", encoding=enc.out) as new:
         for line in original:
             if args.screen:
@@ -237,7 +280,7 @@ def copy():
 
 
 def junk_strip(line):
-    # Based on PR#4 by eMPee584
+    # Based on PR #4 by eMPee584
     # Looping is terrible, but, a required evil it seems
     for junk in sub.junk:
         try:
@@ -250,13 +293,13 @@ def junk_strip(line):
 def process_line(line):
     # Strip formatting junk from line
     # We do this before checking for duplicates
-    line = junk_strip(line)
+    line = junk_strip(line).strip()
     # Process line if it's not a duplicate of the previous one, or empty.
-    # Based on PR#4 by eMPee584
-    line = line.strip()
-    if not line == sub.prev and line != "":
-        # One liners based on PR#2 by adam-sierakowski
-        if args.oneliners:
+    # Based on PR #4 by eMPee584
+    # Fix for live translations giving duplicates from Issue #9 by rajibando
+    if line.strip() and line.strip() != sub.prev.strip():
+        # One liners based on PR #2 by adam-sierakowski
+        if sub.oneline:
             if line[-1] in [".", "?", "!", "…"]:
                 ln = f"{line}\n"
                 sub.text += ln
@@ -267,7 +310,7 @@ def process_line(line):
             ln = f"{line}\n"
             sub.text += ln
 
-        if args.screen:
+        if sub.scr:
             print(ln, end="")
         sub.prev = ln
 
@@ -316,7 +359,7 @@ def do_ass():
     # https://wiki.multimedia.cx/index.php?title=SubStation_Alpha
     # http://www.tcax.org/docs/ass-specs.htm Browser may complain as not https site.
     # This format has different version, later ones include more metadata and sections,
-    # this should not be a big problem as teh text is always on a `Dialog:` line.
+    # this should not be a big problem as the text is always on a `Dialog:` line.
     # Two keys issues are; lines may not be in timecode order,
     # text may be for labelling things and not part of the script.
     print("Processing file as SubStation Alpha subtitle [.ssa/.ass]")
@@ -342,9 +385,9 @@ def do_ass():
                 stc = x[0][0]  # Start timecode
                 nom = x[0][1]  # Character speaking
                 txt = x[0][2]  # Text
-                text = txt if (args.nonames or nom == "") else f"{nom}: {txt}"
+                text = txt if (sub.no_names or nom == "") else f"{nom}: {txt}"
                 d.update({stc: {"dialog": text}})
-        for t in [v["dialog"] for k, v in sorted(d.items())] if not args.nosort else [v["dialog"] for v in d.values()]:
+        for t in [v["dialog"] for k, v in sorted(d.items())] if not sub.nosrt else [v["dialog"] for v in d.values()]:
             process_line(t.replace(r"\n", " ").replace(r"\N", " "))  # Fixes odd newline in .ass
     write_to_file()
 
@@ -358,7 +401,7 @@ def write_to_file():
 
 
 def do_work():
-    overwrite(file.o)
+    overwrite_old_file(file.o)
     if sub.format == "srt":
         do_srt()
     elif sub.format == "vtt":
@@ -369,20 +412,50 @@ def do_work():
         raise Exception("Unable to determine Subtitle format.")
 
 
+def check_it_works(in_file):  # Pytest runner
+    try:
+        file.set_file(in_file["test_file"])
+        file.o = Path(in_file["test_outf"])  # Override normal output file
+        file.set_over(True)  # Always overwrite (although unlikely when Pytesting)
+        enc.check_encoding()
+        enc.force_utf8(in_file["test_force"])  # True/False
+        sub.set_no_names(in_file["test_names"])  # True/False
+        sub.set_no_sort(in_file["test_sort"])
+        sub.screen_output(False)  # Pytest never needs to output to screen
+        sub.one_line(in_file["test_onel"])
+        sub.testsub()
+        do_work()
+        return
+    except Exception as error:
+        return f"Testing failed: {error}"
+
+
+# Init classes
+file = file_handler()
+enc = encoding()
+sub = subtitle()
+
+# Do things
 if __name__ == "__main__":
     args = arguments()
     cls()
     try:
         print(f"SUB to TXT v{version}\n{'-' * 22}")
         if args.file or args.copy:
-            file = file_handler(Path(args.file))
-            enc = encoding(file.i)
+            file.set_file(args.file)
+            file.set_over(args.overwrite)
+            enc.check_encoding()
+            enc.force_utf8(args.utf8)  # True/False
+            sub.set_no_names(args.nonames)  # True/False
+            sub.set_no_sort(args.nosort)  # True/False
+            sub.screen_output(args.screen)  # True/False
+            sub.one_line(args.oneliners)  # True/False
+            sub.testsub()
             if args.pause and not yn("Ready to start?"):
                 raise Exception("User exited at pause before start")
             if args.copy:
                 copy()
             else:
-                sub = subtitle()
                 do_work()
         if args.dir:
             files = list(filter(lambda p: p.suffix in {".srt", ".vtt", ".ssa", ".ass"}, Path(args.dir).glob("*")))
@@ -390,10 +463,9 @@ if __name__ == "__main__":
             c = 0
             print(f"Multi file mode. Found {how_many} files.")
             print("-" * 22)
-            for file in files:
-                file = file_handler(Path(file))
-                enc = encoding(file.i)
-                sub = subtitle()
+            for f in files:
+                file.set(f)
+                enc.force_utf8(args.utf8)
                 do_work()
                 print("-" * 22)
                 c += 1
@@ -401,3 +473,7 @@ if __name__ == "__main__":
         print("\nFinished!\n")
     except Exception as error:
         print(f"Script execution stopped because:\n{error}")
+        if args.debug:
+            import traceback
+
+            print(traceback.format_exc())

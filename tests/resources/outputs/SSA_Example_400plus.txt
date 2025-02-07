@@ -1,0 +1,2 @@
+Default: Le rugissement des larmes ! Tu es mon ami.
+Default: Est-ce vraiment Naruto ?
