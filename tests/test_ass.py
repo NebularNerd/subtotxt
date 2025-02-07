@@ -1,4 +1,4 @@
-""" Test SubStation Alpha Subtitles. """
+"""Test SubStation Alpha Subtitles."""
 
 # cSpell: disable
 # Test SubStation Alpha Subtitles 4.00+

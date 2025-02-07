@@ -1,5 +1,7 @@
+"""Subtitle to plain Text converter: Handles  .srt, .vtt, .ssa, .ass files."""
+
 # cSpell:disable
-# SRT or WEBVTT to plain Text
+# SRT, ASS/SSA or WEBVTT to plain Text
 # Author: NebularNerd
 # Version: 2025-02-03
 # https://github.com/NebularNerd/subtotxt
@@ -15,6 +17,7 @@ version = "2025-02-03"
 
 
 def missing_modules_installer(required_modules):
+    """Auto module installer, fairly clever, will run if it finds modules are missing."""
     import platform
 
     if float(platform.python_version().rsplit(".", 1)[0].strip()) < 3.12:  # pkg_resources method
@@ -65,13 +68,17 @@ while True:
 
 
 class file_handler:
+    """Get the file ready for action"""
+
     def __init__(self):
+        """Variables have the following purposes."""
         self.i = None  # Input file
         self.o = None  # Output file
         self.c = None  # Copy file
         self.overw = None  # Overwrite
 
     def set_file(self, i):
+        """Set file input, then create output names."""
         i = Path(i)
         if i.is_file():
             self.i = i
@@ -82,17 +89,22 @@ class file_handler:
             raise FileNotFoundError(f"File '{i}' not found.")
 
     def set_over(self, x):
+        """Overwrite existing output file without asking."""
         self.overw = x
 
 
 class encoding:
+    """Figure out what encoding the subtitle has, override output encoding if desired."""
+
     def __init__(self):
+        """Variables have the following purposes."""
         self.res = None  # Check encoding
         self.enc = None  # Detected encoding
         self.out = None  # Output encoding
 
     def check_encoding(self):
-        self.res = from_path(file.i).best()  # charset_normalizer guess encoding
+        """charset_normalizer guess encoding."""
+        self.res = from_path(file.i).best()
         self.enc = self.res.encoding
         if self.res is not None and self.enc == "utf_8" and self.res.bom:
             self.enc += "_sig"  # adds sig for utf_8_sig/bom files
@@ -100,12 +112,16 @@ class encoding:
         print(f"Confidence of encoding: {int((1.0 - self.res.chaos) * 100)}%")
 
     def force_utf8(self, x):
+        """Force UTF8 output regardless of input encoding."""
         print("Output encoding forced to UTF-8" if x else "Output will use input encoding")
         self.out = "utf_8" if x else self.enc
 
 
 class subtitle:
+    """Wrangle and mangle to file into nice readable text."""
+
     def __init__(self):
+        """Variables have the following purposes."""
         self.format = None  # Which subtitle format
         self.text = ""  # The output text
         self.text_finished = ""  # The output text after a final check
@@ -117,6 +133,17 @@ class subtitle:
         self.oneline = False  # If True attempts to join longer lines
 
     def testsub(self):
+        """
+        Opens subtitle file and attempts to detect encoding used.
+
+        Notes:
+        A file may appear as `UTF8` in some programs but be detects as `ascii` here,
+        this is not a bug. `ascii` just means there are no characters in the file beyond the
+        standard character set.
+
+        Chinese and near neighbours/dialects have many many encodings, sometimes the wrong one may
+        be choosen but it should not affect output.
+        """
         with open(file.i, "r", encoding=enc.enc) as ts:
             for line in ts:
                 if "WEBVTT" in line:
@@ -127,32 +154,42 @@ class subtitle:
                     self.format = "ass"
 
     def junklist(self):
-        # This list will grow
-        # Escaping and r(raw) tag needed for special characters
+        """
+        List of junk strings, characters, control codes we wish to remove.
+
+        This list will grow/adapt over time.
+        Escaping and r(raw) tag needed for special characters
+        """
         j = ["<.*?>", r"\{.*?\}", r"\[.*\]", r"\(.*\)", r"^-\s"]
         if self.no_names:
             j.append("^.*?:")
         return j
 
     def set_no_names(self, x):
+        """If True: Strip names from lines, e.g.: `Blackadder: You're name is Bob?`."""
         self.no_names = x
         self.junk = self.junklist()
 
     def set_no_sort(self, x):
+        """If True: Prevents .ass/.ssa subs from being sorted by timecode"""
         self.nosrt = x
 
     def screen_output(self, x):
+        """If True: Outputs processed content to screen/console."""
         self.scr = x
 
     def one_line(self, x):
+        """If True: Sets one line function, attempts to join split sentences."""
         self.oneline = x
 
 
-def cls():  # Clear screen win/*nix friendly
+def cls():
+    """Clear screen win/*nix friendly."""
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def yn(yn):  # Simple Y/N selector, use yn(text_for_choice)
+def yn(yn):
+    """Simple Y/N selector, use yn(text_for_choice)."""
     while True:
         print(f"{yn} [Y/N]")
         choice = input().lower()
@@ -165,6 +202,7 @@ def yn(yn):  # Simple Y/N selector, use yn(text_for_choice)
 
 
 def arguments():
+    """Everyone loves arguments, here's a list of them."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Quickly convert SRT, SSA or WEBVTT subtitles into plain text file.",
@@ -261,6 +299,7 @@ def arguments():
 
 
 def overwrite_old_file(f):
+    """Politely check if there is an exiting file before moving forward."""
     if f.is_file():
         if (not file.overw and yn("Output file already exists, delete and make a new one?")) or file.overw:
             print("Overwriting old file")
@@ -270,6 +309,7 @@ def overwrite_old_file(f):
 
 
 def copy():
+    """This just copies a file line by line, handy for checking encoding issues without processing the file."""
     overwrite_old_file(file.c)
     with open(file.i, "r", encoding=enc.enc) as original, open(file.c, "w", encoding=enc.out) as new:
         for line in original:
@@ -280,8 +320,7 @@ def copy():
 
 
 def junk_strip(line):
-    # Based on PR #4 by eMPee584
-    # Looping is terrible, but, a required evil it seems
+    """Based on PR #4 by eMPee584. Looping is terrible, but, a required evil it seems."""
     for junk in sub.junk:
         try:
             line = re.sub(rf"{junk}", "", line)
@@ -291,6 +330,7 @@ def junk_strip(line):
 
 
 def process_line(line):
+    """Process each line, remove formatting junk, check for duplicates, store for writing later."""
     # Strip formatting junk from line
     # We do this before checking for duplicates
     line = junk_strip(line).strip()
@@ -316,9 +356,11 @@ def process_line(line):
 
 
 def do_srt():
-    # SubRip subtitle file .srt
-    # https://en.wikipedia.org/wiki/SubRip
-    # Format has a line number followed by a timecode on the next line, then text.
+    """
+    SubRip subtitle file .srt format.
+    https://en.wikipedia.org/wiki/SubRip
+    Format has a line number followed by a timecode on the next line, then text.
+    """
     print("Processing file as SubRip subtitles [.srt]")
     with open(file.i, "r", encoding=enc.enc) as original:
         subnum = 1
@@ -331,12 +373,15 @@ def do_srt():
 
 
 def do_vtt():
-    # WebVTT (Web Video Text Tracks) subtitle file .vtt
-    # https://en.wikipedia.org/wiki/WebVTT
-    # https://www.checksub.com/blog/guide-use-webvtt-subtitles-format
-    # This format has a few differing 'standards', you have:
-    # Metadata, notes, styles, timceodes with optional hours, and optional line numbers,
-    # almost none of which are actually used it seems. But we need to handle them
+    """
+    WebVTT (Web Video Text Tracks) subtitle file .vtt format.
+
+    https://en.wikipedia.org/wiki/WebVTT
+    https://www.checksub.com/blog/guide-use-webvtt-subtitles-format
+    This format has a few differing `standards`, you have:
+    Metadata, notes, styles, timceodes with optional hours, and optional line numbers,
+    almost none of which are actually used it seems. But we need to handle them.
+    """
     print("Processing file as WebVTT (Web Video Text Tracks) [.vtt]")
     with open(file.i, "r", encoding=enc.enc) as original:
         subnum = 1
@@ -355,13 +400,16 @@ def do_vtt():
 
 
 def do_ass():
-    # SubStation Alpha subtitle file .ssa/.ass
-    # https://wiki.multimedia.cx/index.php?title=SubStation_Alpha
-    # http://www.tcax.org/docs/ass-specs.htm Browser may complain as not https site.
-    # This format has different version, later ones include more metadata and sections,
-    # this should not be a big problem as the text is always on a `Dialog:` line.
-    # Two keys issues are; lines may not be in timecode order,
-    # text may be for labelling things and not part of the script.
+    """
+    SubStation Alpha subtitle file .ssa/.ass format.
+
+    https://wiki.multimedia.cx/index.php?title=SubStation_Alpha
+    http://www.tcax.org/docs/ass-specs.htm Browser may complain as not https site.
+    This format has different version, later ones include more metadata and sections,
+    this should not be a big problem as the text is always on a `Dialog:` line.
+    Two keys issues are; lines may not be in timecode order,
+    text may be for labelling objects and not part of the script.
+    """
     print("Processing file as SubStation Alpha subtitle [.ssa/.ass]")
     with open(file.i, "r", encoding=enc.enc) as original:
         # Try and get version
@@ -393,6 +441,7 @@ def do_ass():
 
 
 def write_to_file():
+    """Outputs finished work to a new file in the selected encoding."""
     with open(file.o, "w", encoding=enc.out) as new:
         # We check for junk again because it can gets split over two lines and we can't find it until now.
         for line in sub.text.splitlines():
@@ -401,6 +450,7 @@ def write_to_file():
 
 
 def do_work():
+    """Process file based on sub.format, additionally check if there is a file from a previous run."""
     overwrite_old_file(file.o)
     if sub.format == "srt":
         do_srt()
@@ -413,6 +463,7 @@ def do_work():
 
 
 def check_it_works(in_file):  # Pytest runner
+    """This is for running Pytests, as we need to be able to set various variables."""
     try:
         file.set_file(in_file["test_file"])
         file.o = Path(in_file["test_outf"])  # Override normal output file

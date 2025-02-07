@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9","3.10","3.11","3.12","3.13"]
+        python-version: ["3.9","3.10","3.11","3.12","3.13"]
 
     steps:
       - uses: szenius/set-timezone@v1.2
@@ -24,5 +24,5 @@ jobs:
       - uses: pavelzw/pytest-action@v2
         with:
           emoji: false
-          verbose: false
+          verbose: true
           job-summary: true
