@@ -1,3 +1,4 @@
+# cSpell: disable
 # https://github.com/marketplace/actions/run-flake8-with-reviewdog
 
 name: flake8 Lint

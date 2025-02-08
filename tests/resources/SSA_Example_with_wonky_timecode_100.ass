@@ -1,0 +1,20 @@
+!: This is a Sub Station Alpha v1.x script.
+!: Check web page http://www.eswat.demon.co.uk/ for details
+!: or e-mail kotus@eswat.demon.co.uk
+Timer: 100.000
+Style: title,Arial,28,16777215,65280,16776960,-2147483640,-1,0,1,3,2,30,30,30
+Style: White Text,Arial,28,16777215,65535,16777215,2039583,-1,0,1,4,2,30,30,30
+Style: Song Title,Arial,24,16777215,65535,16777215,2039583,-1,0,1,3,2,30,30,50
+Comment: Marked=0,0:00:10.0,0:00:12.0,title,,0000,0000,0000,From the collection 
+of\nAnnapuma's Script Crypt http://www.archea.demon.co.uk/crypt.html
+Comment: Marked=0,0:00:13.0,0:00:15.0,White Text,,0000,0000,0000,Original transl
+ation by Arctic Animation
+Comment: Marked=0,0:00:16.0,0:00:18.0,White Text,,0000,0000,0000,Re-timed, re-ed
+ited, and partially re-translated by Studio Kawaii
+Comment: Marked=0,0:00:19.0,0:00:21.0,White Text,synch point,0000,0000,0000,Stud
+io Kawaii version SK 1.0
+Comment: Marked=0,0:00:22.0,0:00:24.0,*Default,synch point,0000,0000,0000,Pause 
+laserdisk at chapter 1.  Unpause laserdisk and begin subtitling simultaneously
+Dialogue: Marked=0,0:01:16.0,0:01:23.4,White Text,Usagi,0000,0000,0000,Pretty Soldier Sailor Moon
+Dialogue: Marked=0,0:01:30.1,0:01:33.3,Song Title,Usagi,0000,0000,0000,{\a5}Wish I could be as honest about you
+Dialogue: Marked=0,0:01:25.0,0:01:23.4,White Text,Usagi,0000,0000,0000,Mis-timecoded line, this should appear between the other two!
