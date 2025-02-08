@@ -13,24 +13,14 @@ class test_values:
     """Set file name and options to parse."""
 
     def __init__(self):
-        """
-        Variables have the following purposes.
-
-        loca: Maps basedir to location of this file.
-        file: Input file, we use a string as it will become a Path again later.
-        utf8: If True, Force UTF8 encoding for output.
-        name: If True, Strip names from lines, e.g.: `Blackadder: You're name is Bob?`.
-        sort: If True, Disables sorting .ass subs into timecode order.
-        onel: If True, Trys to join split sentences into one line.
-        outf: Temp output file to override normal output location.
-        """
-        self.loca = Path(__file__).parent.absolute()
-        self.file = str(f"{self.loca}/resources/SSA_Example_400plus.ass")
-        self.utf8 = False
-        self.name = False
-        self.sort = False
-        self.onel = False
-        self.outf = tempfile.NamedTemporaryFile()
+        """Variables have the following purposes."""
+        self.loca = Path(__file__).parent.absolute()  # Maps basedir to location of this file.
+        self.file = str(f"{self.loca}/resources/SSA_Example_400plus.ass")  # Input file.
+        self.utf8 = False  # If True, Force UTF8 encoding for output.
+        self.name = False  # If True, Strip names from lines, e.g.: `Blackadder: You're name is Bob?`.
+        self.sort = False  # If True, Disables sorting .ass subs into timecode order.
+        self.onel = False  # If True, Trys to join split sentences into one line.
+        self.outf = tempfile.NamedTemporaryFile()  # Temp output file to override normal output location.
 
 
 use_this = test_values()

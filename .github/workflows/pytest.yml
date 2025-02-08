@@ -1,3 +1,5 @@
+# cSpell: disable
+# https://github.com/marketplace/actions/run-pytest
 name: Run Python tests
 
 on: [push]
@@ -13,7 +15,7 @@ jobs:
     steps:
       - uses: szenius/set-timezone@v1.2
         with:
-          timezoneLinux: "Europe/Berlin"
+          timezoneLinux: "Europe/London"
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4

@@ -68,7 +68,7 @@ while True:
 
 
 class file_handler:
-    """Get the file ready for action"""
+    """Get the file ready for action."""
 
     def __init__(self):
         """Variables have the following purposes."""
@@ -171,7 +171,7 @@ class subtitle:
         self.junk = self.junklist()
 
     def set_no_sort(self, x):
-        """If True: Prevents .ass/.ssa subs from being sorted by timecode"""
+        """If True: Prevents .ass/.ssa subs from being sorted by timecode."""
         self.nosrt = x
 
     def screen_output(self, x):
@@ -189,7 +189,11 @@ def cls():
 
 
 def yn(yn):
-    """Simple Y/N selector, use yn(text_for_choice)."""
+    """
+    Yes/No selector, returns True for yes.
+
+    Usage: yn(text_for_choice)
+    """
     while True:
         print(f"{yn} [Y/N]")
         choice = input().lower()
@@ -309,7 +313,7 @@ def overwrite_old_file(f):
 
 
 def copy():
-    """This just copies a file line by line, handy for checking encoding issues without processing the file."""
+    """For testing encoding errors, copies file line by line but does not process the subtitles."""
     overwrite_old_file(file.c)
     with open(file.i, "r", encoding=enc.enc) as original, open(file.c, "w", encoding=enc.out) as new:
         for line in original:
@@ -357,7 +361,8 @@ def process_line(line):
 
 def do_srt():
     """
-    SubRip subtitle file .srt format.
+    Format: .srt SubRip.
+
     https://en.wikipedia.org/wiki/SubRip
     Format has a line number followed by a timecode on the next line, then text.
     """
@@ -374,7 +379,7 @@ def do_srt():
 
 def do_vtt():
     """
-    WebVTT (Web Video Text Tracks) subtitle file .vtt format.
+    Format: .vtt WebVTT (Web Video Text Tracks).
 
     https://en.wikipedia.org/wiki/WebVTT
     https://www.checksub.com/blog/guide-use-webvtt-subtitles-format
@@ -401,7 +406,7 @@ def do_vtt():
 
 def do_ass():
     """
-    SubStation Alpha subtitle file .ssa/.ass format.
+    Format: .ssa/.ass SubStation Alpha.
 
     https://wiki.multimedia.cx/index.php?title=SubStation_Alpha
     http://www.tcax.org/docs/ass-specs.htm Browser may complain as not https site.
@@ -441,7 +446,7 @@ def do_ass():
 
 
 def write_to_file():
-    """Outputs finished work to a new file in the selected encoding."""
+    """Write completed text to a new file."""
     with open(file.o, "w", encoding=enc.out) as new:
         # We check for junk again because it can gets split over two lines and we can't find it until now.
         for line in sub.text.splitlines():
@@ -463,7 +468,7 @@ def do_work():
 
 
 def check_it_works(in_file):  # Pytest runner
-    """This is for running Pytests, as we need to be able to set various variables."""
+    """For pytest runs, sets variables."""
     try:
         file.set_file(in_file["test_file"])
         file.o = Path(in_file["test_outf"])  # Override normal output file
