@@ -520,7 +520,7 @@ if __name__ == "__main__":
             c = 0
             print(f"Multi file mode. Found {how_many} files. The files are:")
             for idx, f in enumerate(files):
-                print(str(idx) + ": " + str(f))
+                print(str(idx + 1) + ": " + str(f))
             print("-" * 22)
             for f in files:
                 file.set_file(f)
