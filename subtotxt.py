@@ -374,7 +374,6 @@ def do_srt():
             if line.strip("\n") == str(subnum) and re.search("(.*:.*:.*-->.*:.*:.*)", next(original)):
                 subnum += 1
             elif not line.strip("\n") == "":
-                print(line)
                 process_line(line)
     write_to_file()
 
