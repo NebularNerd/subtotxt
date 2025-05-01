@@ -524,8 +524,14 @@ if __name__ == "__main__":
             print("-" * 22)
             for f in files:
                 file.set_file(f)
-                sub.testsub()
+                file.set_over(args.overwrite)
+                enc.check_encoding()
                 enc.force_utf8(args.utf8)
+                sub.testsub()
+                sub.set_no_names(args.nonames)  # True/False
+                sub.set_no_sort(args.nosort)  # True/False
+                sub.screen_output(args.screen)  # True/False
+                sub.one_line(args.oneliners)  # True/False
                 do_work()
                 print("-" * 22)
                 c += 1
