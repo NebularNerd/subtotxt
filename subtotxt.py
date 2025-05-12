@@ -325,11 +325,12 @@ def copy():
 
 def junk_strip(line):
     """Based on PR #4 by eMPee584. Looping is terrible, but, a required evil it seems."""
-    for junk in sub.junk:
-        try:
-            line = re.sub(rf"{junk}", "", line)
-        except Exception:  # Line may become blank if we remove Closed Captions
-            pass
+    if sub.junk:
+        for junk in sub.junk:
+            try:
+                line = re.sub(rf"{junk}", "", line)
+            except Exception:  # Line may become blank if we remove Closed Captions
+                pass
     return line
 
 
@@ -517,11 +518,20 @@ if __name__ == "__main__":
             files = list(filter(lambda p: p.suffix in {".srt", ".vtt", ".ssa", ".ass"}, Path(args.dir).glob("*")))
             how_many = len(files)
             c = 0
-            print(f"Multi file mode. Found {how_many} files.")
+            print(f"Multi file mode. Found {how_many} files. The files are:")
+            for idx, f in enumerate(files):
+                print(str(idx + 1) + ": " + str(f))
             print("-" * 22)
             for f in files:
-                file.set(f)
+                file.set_file(f)
+                file.set_over(args.overwrite)
+                enc.check_encoding()
                 enc.force_utf8(args.utf8)
+                sub.testsub()
+                sub.set_no_names(args.nonames)  # True/False
+                sub.set_no_sort(args.nosort)  # True/False
+                sub.screen_output(args.screen)  # True/False
+                sub.one_line(args.oneliners)  # True/False
                 do_work()
                 print("-" * 22)
                 c += 1
