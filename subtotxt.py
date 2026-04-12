@@ -5,26 +5,29 @@
 # Author: NebularNerd
 # Version: 2025-02-03
 # https://github.com/NebularNerd/subtotxt
-import sys
-import os
 import argparse
-import subprocess
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
-
-version = "2025-02-03"
+version = "2026-04-12"  # Bugfixes
 
 
 def missing_modules_installer(required_modules):
     """Auto module installer, fairly clever, will run if it finds modules are missing."""
     import platform
 
-    if float(platform.python_version().rsplit(".", 1)[0].strip()) < 3.12:  # pkg_resources method
+    if (
+        float(platform.python_version().rsplit(".", 1)[0].strip()) < 3.12
+    ):  # pkg_resources method
         import pkg_resources
 
         installed = {pkg.key for pkg in pkg_resources.working_set}
-    if float(platform.python_version().rsplit(".", 1)[0].strip()) >= 3.12:  # importlib.metadata method
+    if (
+        float(platform.python_version().rsplit(".", 1)[0].strip()) >= 3.12
+    ):  # importlib.metadata method
         import importlib.metadata
 
         distributions = importlib.metadata.distributions()
@@ -38,7 +41,9 @@ def missing_modules_installer(required_modules):
             y += f"{x.lower()}, "
         print(f"Installing missing modules\n{y[:-2]}\nplease wait a few moments.")
         python = sys.executable
-        subprocess.check_call([python, "-m", "pip", "install", *missing], stdout=subprocess.DEVNULL)
+        subprocess.check_call(
+            [python, "-m", "pip", "install", *missing], stdout=subprocess.DEVNULL
+        )
         print("Done, thanks for waiting")
 
 
@@ -49,8 +54,8 @@ def missing_modules_installer(required_modules):
 
 while True:
     try:
-        from send2trash import send2trash
         from charset_normalizer import from_path
+        from send2trash import send2trash
 
         break
     except ModuleNotFoundError:
@@ -113,7 +118,9 @@ class encoding:
 
     def force_utf8(self, x):
         """Force UTF8 output regardless of input encoding."""
-        print("Output encoding forced to UTF-8" if x else "Output will use input encoding")
+        print(
+            "Output encoding forced to UTF-8" if x else "Output will use input encoding"
+        )
         self.out = "utf_8" if x else self.enc
 
 
@@ -137,20 +144,32 @@ class subtitle:
         Opens subtitle file and attempts to detect encoding used.
 
         Notes:
-        A file may appear as `UTF8` in some programs but be detects as `ascii` here,
+        A file may appear as `UTF8` in some programs but be detected as `ascii` here,
         this is not a bug. `ascii` just means there are no characters in the file beyond the
         standard character set.
 
         Chinese and near neighbours/dialects have many many encodings, sometimes the wrong one may
-        be choosen but it should not affect output.
+        be chosen but it should not affect output.
         """
         with open(file.i, "r", encoding=enc.enc) as ts:
             for line in ts:
                 if "WEBVTT" in line:
                     self.format = "vtt"
-                if line.strip("\n") == "1" and re.search("(.*:.*:.*-->.*:.*:.*)", next(ts)):
+                if line.strip("\n") == "1" and re.search(
+                    "(.*:.*:.*-->.*:.*:.*)", next(ts)
+                ):
                     self.format = "srt"
-                if any(s in line for s in ["!:", "Timer:", "Style:", "Comment:", "Dialogue:", "ScriptType:"]):
+                if any(
+                    s in line
+                    for s in [
+                        "!:",
+                        "Timer:",
+                        "Style:",
+                        "Comment:",
+                        "Dialogue:",
+                        "ScriptType:",
+                    ]
+                ):
                     self.format = "ass"
 
     def junklist(self):
@@ -305,7 +324,10 @@ def arguments():
 def overwrite_old_file(f):
     """Politely check if there is an exiting file before moving forward."""
     if f.is_file():
-        if (not file.overw and yn("Output file already exists, delete and make a new one?")) or file.overw:
+        if (
+            not file.overw
+            and yn("Output file already exists, delete and make a new one?")
+        ) or file.overw:
             print("Overwriting old file")
             send2trash(f)
         else:
@@ -315,7 +337,10 @@ def overwrite_old_file(f):
 def copy():
     """For testing encoding errors, copies file line by line but does not process the subtitles."""
     overwrite_old_file(file.c)
-    with open(file.i, "r", encoding=enc.enc) as original, open(file.c, "w", encoding=enc.out) as new:
+    with (
+        open(file.i, "r", encoding=enc.enc) as original,
+        open(file.c, "w", encoding=enc.out) as new,
+    ):
         for line in original:
             if args.screen:
                 print(line, end="")
@@ -371,11 +396,12 @@ def do_srt():
     with open(file.i, "r", encoding=enc.enc) as original:
         subnum = 1
         for line in original:  # Ignore SRT Subtitle # and Timecode lines
-            if line.strip("\n") == str(subnum) and re.search("(.*:.*:.*-->.*:.*:.*)", next(original)):
+            if line.strip("\n") == str(subnum) and re.search(
+                "(.*:.*:.*-->.*:.*:.*)", next(original)
+            ):
                 subnum += 1
             elif not line.strip("\n") == "":
                 process_line(line)
-    write_to_file()
 
 
 def do_vtt():
@@ -394,7 +420,9 @@ def do_vtt():
         head = 1  # Try and skip over everything until we reach the subtitles.
         for line in original:
             # Line number and timecode format
-            if line.strip("\n") == str(subnum) and re.search("(.*:.*-->.*:.*)", next(original)):
+            if line.strip("\n") == str(subnum) and re.search(
+                "(.*:.*-->.*:.*)", next(original)
+            ):
                 subnum += 1
                 head = 0
             # Timecode only format
@@ -402,7 +430,6 @@ def do_vtt():
                 head = 0
             elif not line.strip("\n") == "" and head == 0:
                 process_line(line)
-    write_to_file()
 
 
 def do_ass():
@@ -433,17 +460,28 @@ def do_ass():
             # Dialogue: Marked=0,0:01:38.95,0:01:41.75,owari,Lupin,0000,0000,0000,,Yeah, love is wonderful.
             if "Dialogue:" in line:
                 if fv == "":
-                    x = re.findall(r"Dialogue:.*?,(.*?\.\d*),.*?\.\d*,.*?,(.*?),.*?,.*?,.*?,(.*)", line)  # v1.0
+                    x = re.findall(
+                        r"Dialogue:.*?,(.*?\.\d*),.*?\.\d*,.*?,(.*?),.*?,.*?,.*?,(.*)",
+                        line,
+                    )  # v1.0
                 else:
-                    x = re.findall(r"Dialogue:.*?,(.*?\.\d*),.*?\.\d*,(.*?),.*?,.*?,.*?,.*?,.*?,(.*)", line)  # v 3.0+
+                    x = re.findall(
+                        r"Dialogue:.*?,(.*?\.\d*),.*?\.\d*,(.*?),.*?,.*?,.*?,.*?,.*?,(.*)",
+                        line,
+                    )  # v 3.0+
                 stc = x[0][0]  # Start timecode
                 nom = x[0][1]  # Character speaking
                 txt = x[0][2]  # Text
                 text = txt if (sub.no_names or nom == "") else f"{nom}: {txt}"
                 d.update({stc: {"dialog": text}})
-        for t in [v["dialog"] for k, v in sorted(d.items())] if not sub.nosrt else [v["dialog"] for v in d.values()]:
-            process_line(t.replace(r"\n", " ").replace(r"\N", " "))  # Fixes odd newline in .ass
-    write_to_file()
+        for t in (
+            [v["dialog"] for k, v in sorted(d.items())]
+            if not sub.nosrt
+            else [v["dialog"] for v in d.values()]
+        ):
+            process_line(
+                t.replace(r"\n", " ").replace(r"\N", " ")
+            )  # Fixes odd newline in .ass
 
 
 def write_to_file():
@@ -457,13 +495,17 @@ def write_to_file():
 
 def do_work():
     """Process file based on sub.format, additionally check if there is a file from a previous run."""
+    sub.text = sub.text_finished = ""  # Clean both text buffers
+    sub_type = {
+        "srt": do_srt,
+        "vtt": do_vtt,
+        "ass": do_ass,
+    }
     overwrite_old_file(file.o)
-    if sub.format == "srt":
-        do_srt()
-    elif sub.format == "vtt":
-        do_vtt()
-    elif sub.format == "ass":
-        do_ass()
+    if sub.format in sub_type:
+        process_sub = sub_type.get(sub.format)
+        process_sub()
+        write_to_file()
     else:
         raise Exception("Unable to determine Subtitle format.")
 
@@ -515,7 +557,12 @@ if __name__ == "__main__":
             else:
                 do_work()
         if args.dir:
-            files = list(filter(lambda p: p.suffix in {".srt", ".vtt", ".ssa", ".ass"}, Path(args.dir).glob("*")))
+            files = list(
+                filter(
+                    lambda p: p.suffix in {".srt", ".vtt", ".ssa", ".ass"},
+                    Path(args.dir).glob("*"),
+                )
+            )
             how_many = len(files)
             c = 0
             print(f"Multi file mode. Found {how_many} files. The files are:")
