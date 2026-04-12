@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 
 
-version = "2025-02-03"
+version = "2026-04-12" # Bugfixes
 
 
 def missing_modules_installer(required_modules):
@@ -137,12 +137,12 @@ class subtitle:
         Opens subtitle file and attempts to detect encoding used.
 
         Notes:
-        A file may appear as `UTF8` in some programs but be detects as `ascii` here,
+        A file may appear as `UTF8` in some programs but be detected as `ascii` here,
         this is not a bug. `ascii` just means there are no characters in the file beyond the
         standard character set.
 
         Chinese and near neighbours/dialects have many many encodings, sometimes the wrong one may
-        be choosen but it should not affect output.
+        be chosen but it should not affect output.
         """
         with open(file.i, "r", encoding=enc.enc) as ts:
             for line in ts:
@@ -374,7 +374,6 @@ def do_srt():
                 subnum += 1
             elif not line.strip("\n") == "":
                 process_line(line)
-    write_to_file()
 
 
 def do_vtt():
@@ -401,7 +400,6 @@ def do_vtt():
                 head = 0
             elif not line.strip("\n") == "" and head == 0:
                 process_line(line)
-    write_to_file()
 
 
 def do_ass():
@@ -442,7 +440,6 @@ def do_ass():
                 d.update({stc: {"dialog": text}})
         for t in [v["dialog"] for k, v in sorted(d.items())] if not sub.nosrt else [v["dialog"] for v in d.values()]:
             process_line(t.replace(r"\n", " ").replace(r"\N", " "))  # Fixes odd newline in .ass
-    write_to_file()
 
 
 def write_to_file():
@@ -456,13 +453,17 @@ def write_to_file():
 
 def do_work():
     """Process file based on sub.format, additionally check if there is a file from a previous run."""
+    sub.text = sub.text_finished = ""  # Clean both text buffers
+    sub_type = {
+        "srt": do_srt,
+        "vtt": do_vtt,
+        "ass": do_ass,
+    }
     overwrite_old_file(file.o)
-    if sub.format == "srt":
-        do_srt()
-    elif sub.format == "vtt":
-        do_vtt()
-    elif sub.format == "ass":
-        do_ass()
+    if sub.format in sub_type:
+        process_sub = sub_type.get(sub.format)
+        process_sub()
+        write_to_file()
     else:
         raise Exception("Unable to determine Subtitle format.")
 
@@ -520,9 +521,21 @@ if __name__ == "__main__":
             print(f"Multi file mode. Found {how_many} files.")
             print("-" * 22)
             for f in files:
-                file.set(f)
-                enc.force_utf8(args.utf8)
-                do_work()
+                file.set_file(f)
+                file.set_over(args.overwrite)
+                enc.check_encoding()
+                enc.force_utf8(args.utf8)  # True/False
+                sub.set_no_names(args.nonames)  # True/False
+                sub.set_no_sort(args.nosort)  # True/False
+                sub.screen_output(args.screen)  # True/False
+                sub.one_line(args.oneliners)  # True/False
+                sub.testsub()
+                if args.pause and not yn("Ready to start?"):
+                    raise Exception("User exited at pause before start")
+                if args.copy:
+                    copy()
+                else:
+                    do_work()
                 print("-" * 22)
                 c += 1
             print(f"Processed {c}/{how_many} files.")
